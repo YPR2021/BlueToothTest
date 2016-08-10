@@ -65,7 +65,7 @@ public class DeviceControlActivity extends Activity implements View.OnClickListe
            Log.d("Log","action = " + str);
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(str)) {
                 invalidateOptionsMenu();
-                System.out.println("action = " + str);
+                Log.d("Log","action = " + str);
             }
             if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(str))
                 mBluetoothLEService.close();
