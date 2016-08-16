@@ -62,10 +62,10 @@ public class DeviceControlActivity extends Activity implements View.OnClickListe
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         public void onReceive(Context paramContext, Intent paramIntent) {
             String str = paramIntent.getAction();
-           Log.d("Log","action = " + str);
+            Log.d("Log", "action = " + str);
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(str)) {
                 invalidateOptionsMenu();
-                Log.d("Log","action = " + str);
+                Log.d("Log", "action = " + str);
             }
             if (BluetoothLeService.ACTION_GATT_DISCONNECTED.equals(str))
                 mBluetoothLEService.close();
@@ -162,7 +162,7 @@ public class DeviceControlActivity extends Activity implements View.OnClickListe
                 return;
             case R.id.btn_send:
                 byte[] arrayOfByte = input_char.getText().toString().getBytes();
-                Log.d("Log",arrayOfByte.toString());
+                Log.d("Log", new String(arrayOfByte).toString());
                 mBluetoothLEService.writeCharacteristic(arrayOfByte);
                 return;
             case R.id.btn_send_clear:
