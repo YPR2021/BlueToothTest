@@ -1,10 +1,5 @@
 package com.example.yang.bluetoothtest;
 
-/**
- * Created by Yang on 2016/8/8.
- */
-
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -14,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.ActivityInfo;
 import android.graphics.YuvImage;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -22,24 +18,24 @@ import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class DeviceControlActivity extends AppCompatActivity implements View.OnClickListener {
+/**
+ * Created by ypr on 2016-08-23  11:02.
+ * Description:
+ * TODO:
+ */
+public class BaseActivity extends AppCompatActivity {
     private static final String TAG = DeviceControlActivity.class.getSimpleName();
     private String bLEDevAddress;
     private String bleDevName;
-    Button btn_send;
-    Button btn_send_clear;
-    Button btn_show_char_clear;
     public ArrayList<BluetoothGattCharacteristic> characteristics;
     ServiceConnection conn = new ServiceConnection() {
         public void onServiceConnected(ComponentName paramComponentName, IBinder paramIBinder) {
@@ -56,14 +52,20 @@ public class DeviceControlActivity extends AppCompatActivity implements View.OnC
             mBluetoothLEService = null;
         }
     };
+    public boolean isGetAciton = false;
     public boolean connect;
     private Bundle data;
-    TextView input_char;
     public BluetoothLeService mBluetoothLEService;
     private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
         public void onReceive(Context paramContext, Intent paramIntent) {
+            Log.d("Log", "onReceive");
             String str = paramIntent.getAction();
             Log.d("Log", "action = " + str);
+            if ("BindToMain".equals(str)) {
+                Log.d("Log", "收到广播了");
+                isGetAciton = true;
+                data = paramIntent.getExtras();
+            }
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(str)) {
                 invalidateOptionsMenu();
                 Log.d("Log", "action = " + str);
@@ -80,7 +82,7 @@ public class DeviceControlActivity extends AppCompatActivity implements View.OnC
                     public void run() {
                         try {
                             String str = new String(arrayOfByte, "UTF-8");
-                            show_char.setText(show_char.getText() + str);
+                            Toast.makeText(BaseActivity.this, "收到:" + str, Toast.LENGTH_SHORT).show();
                             return;
                         } catch (UnsupportedEncodingException localUnsupportedEncodingException) {
                             localUnsupportedEncodingException.printStackTrace();
@@ -90,11 +92,8 @@ public class DeviceControlActivity extends AppCompatActivity implements View.OnC
             }
         }
     };
-    private Handler mHandler;
     public BluetoothGattCharacteristic mNotifyCharacteristic;
     private ProgressDialog progressDialog;
-    TextView show_char;
-    TextView show_device;
 
     public static String bytesToHexString(byte[] paramArrayOfByte) {
         String str1 = "";
@@ -109,25 +108,9 @@ public class DeviceControlActivity extends AppCompatActivity implements View.OnC
     }
 
     private void getIntentData() {
-        data = getIntent().getExtras();
         bleDevName = data.getString("BLEDevName");
         bLEDevAddress = data.getString("BLEDevAddress");
-    }
-
-    private void init() {
-        mHandler = new Handler();
-        String str = getIntent().getStringExtra("BLEDevAddress");
-        show_device = ((TextView) findViewById(R.id.tv_dev_address));
-        show_device.setText(str);
-        input_char = ((TextView) findViewById(R.id.et_data));
-        show_char = ((TextView) findViewById(R.id.tv_data));
-        btn_send = ((Button) findViewById(R.id.btn_send));
-        btn_send_clear = ((Button) findViewById(R.id.btn_send_clear));
-        btn_show_char_clear = ((Button) findViewById(R.id.btn_show_clear));
-        btn_send.setOnClickListener(this);
-        btn_send_clear.setOnClickListener(this);
-        btn_show_char_clear.setOnClickListener(this);
-        bindService(new Intent(this, BluetoothLeService.class), conn, Context.BIND_AUTO_CREATE);
+        Log.d("Log", bleDevName + "=======" + bLEDevAddress);
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {
@@ -136,6 +119,7 @@ public class DeviceControlActivity extends AppCompatActivity implements View.OnC
         localIntentFilter.addAction(BluetoothLeService.ACTION_GATT_DISCONNECTED);
         localIntentFilter.addAction(BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED);
         localIntentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
+        localIntentFilter.addAction("BindToMain");
         return localIntentFilter;
     }
 
@@ -156,58 +140,56 @@ public class DeviceControlActivity extends AppCompatActivity implements View.OnC
         return localArrayList;
     }
 
-    public void onClick(View paramView) {
-        switch (paramView.getId()) {
-            case R.id.et_data:
-            default:
-                return;
-            case R.id.btn_send:
-                byte[] arrayOfByte = input_char.getText().toString().getBytes();
-                mBluetoothLEService.writeCharacteristic(arrayOfByte);
-                return;
-            case R.id.btn_send_clear:
-                input_char.setText("");
-                return;
-            case R.id.btn_show_clear:
-        }
-        show_char.setText("");
-    }
-
     protected void onCreate(Bundle paramBundle) {
         super.onCreate(paramBundle);
-        setContentView(R.layout.activity_device);
-        getIntentData();
-        init();
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        Log.d("Log", "onCreate");
     }
 
     protected void onDestroy() {
+        Log.d("Log", "onDestroy");
         super.onDestroy();
-        mBluetoothLEService.disconnect();
-        mBluetoothLEService.close();
-        unbindService(conn);
-        mBluetoothLEService = null;
+        if (isGetAciton) {
+            mBluetoothLEService.disconnect();
+            mBluetoothLEService.close();
+            unbindService(conn);
+            mBluetoothLEService = null;
+        }
     }
 
     protected void onPause() {
+        Log.d("Log", "onPause");
         super.onPause();
-        unregisterReceiver(this.mGattUpdateReceiver);
+        if (isGetAciton)
+            unregisterReceiver(this.mGattUpdateReceiver);
     }
 
     protected void onResume() {
+        Log.d("Log", "onResume");
         super.onResume();
         registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-        progressDialog = ProgressDialog.show(this, "Connect-bluetooth4.0", "Connecting devivce...");
-        mHandler.postDelayed(new Runnable() {
-                                 public void run() {
-                                     if (mBluetoothLEService != null) {
-                                         connect = mBluetoothLEService.connect(bLEDevAddress);
-                                         if (connect) {
-                                             new DeviceControlActivity.NotifyThread().execute(new String[0]);
-                                         }
-                                     }
-                                 }
-                             }
-                , 1000L);
+        if (isGetAciton) {
+            getIntentData();
+            bindService(new Intent(this, BluetoothLeService.class), conn, Context.BIND_AUTO_CREATE);
+            progressDialog = ProgressDialog.show(this, "Connect-bluetooth4.0", "Connecting devivce...");
+            new Handler().postDelayed(new Runnable() {
+                                          public void run() {
+                                              Log.d("Log", "111111");
+                                              if (mBluetoothLEService != null) {
+                                                  connect = mBluetoothLEService.connect(bLEDevAddress);
+                                                  Log.d("Log", "2222222");
+                                                  if (connect) {
+                                                      new NotifyThread().execute(new String[0]);
+                                                      Log.d("Log", "333333333");
+                                                  } else {
+                                                      progressDialog.dismiss();
+                                                      Log.d("Log", "失败");
+                                                  }
+                                              }
+                                          }
+                                      }
+                    , 1000L);
+        }
     }
 
     class NotifyThread extends AsyncTask<String, String, String> {
