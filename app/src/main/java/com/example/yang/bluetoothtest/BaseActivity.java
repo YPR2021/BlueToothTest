@@ -13,6 +13,7 @@ import android.content.pm.ActivityInfo;
 import android.graphics.YuvImage;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
@@ -22,6 +23,14 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -78,20 +87,60 @@ public class BaseActivity extends AppCompatActivity {
                 mBluetoothLEService.disconnect();
             if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(str)) {
                 final byte[] arrayOfByte = paramIntent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+//                final String stringExtra = paramIntent.getStringExtra(BluetoothLeService.EXTRA_DATA);
                 runOnUiThread(new Runnable() {
                     public void run() {
                         try {
                             String str = new String(arrayOfByte, "UTF-8");
-                            Toast.makeText(BaseActivity.this, "收到:" + str, Toast.LENGTH_SHORT).show();
+                            String s = BytesUtils.str2HexStr(str);
+                            InputStream inputStream = new FileInputStream(new File(Environment.getExternalStorageDirectory() + "/APP1.bin"));
+                            Log.d("Log", "" + Environment.getExternalStorageDirectory());
+                            readInputStream(inputStream);
+                            Toast.makeText(BaseActivity.this, "收到:" + s, Toast.LENGTH_SHORT).show();
                             return;
-                        } catch (UnsupportedEncodingException localUnsupportedEncodingException) {
-                            localUnsupportedEncodingException.printStackTrace();
+                        } catch (Exception exception) {
+                            exception.printStackTrace();
                         }
                     }
                 });
             }
         }
     };
+
+//    public interface OnOnceReadListener {
+//        void onOnceRead();
+//    }
+//
+//    private  OnOnceReadListener mOnceReadListener;
+//
+//    public  void setOnOnceReadListener(OnOnceReadListener listener) {
+//        mOnceReadListener = listener;
+//    }
+
+    public void readInputStream(final InputStream inputStream) {
+        // 1.建立通道对象
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        // 2.定义存储空间
+        byte[] buffer = new byte[20];
+        // 3.开始读文件
+        int len = -1;
+        try {
+            if (inputStream != null) {
+                while ((len = inputStream.read(buffer)) != -1) {
+                    // 将Buffer中的数据写到outputStream对象中
+                    outputStream.write(buffer, 0, len);
+                    Log.d("Log", "" + BytesUtils.binary(buffer, 16));
+                }
+            }
+            // 4.关闭流
+            outputStream.close();
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        return outputStream.toByteArray();
+    }
+
     public BluetoothGattCharacteristic mNotifyCharacteristic;
     private ProgressDialog progressDialog;
 

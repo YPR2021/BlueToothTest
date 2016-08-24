@@ -112,7 +112,18 @@ public class BluetoothLeService extends Service {
         if (SampleGattAttributes.Read.equals(paramBluetoothGattCharacteristic.getUuid()))
             localIntent.putExtra(EXTRA_DATA, paramBluetoothGattCharacteristic.getValue());
         sendBroadcast(localIntent);
+//        final byte[] data = paramBluetoothGattCharacteristic.getValue();
+//        if (data != null && data.length > 0) {
+//            final StringBuilder stringBuilder = new StringBuilder(data.length);
+//            for(byte byteChar : data)
+//                stringBuilder.append(String.format("%02X ", byteChar));
+//            Log.d("Log", data+"~~~~~~"+stringBuilder.toString());
+//            localIntent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
+//        }
+//        sendBroadcast(localIntent);
     }
+
+
 
     public void close() {
         if (mBluetoothGatt == null)
@@ -218,19 +229,21 @@ public class BluetoothLeService extends Service {
         localBluetoothGattCharacteristic.setValue(paramArrayOfByte);
         mBluetoothGatt.writeCharacteristic(localBluetoothGattCharacteristic);
     }
+
     public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
-        mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+//        mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
 
         // This is specific to Heart Rate Measurement.
-        if (SampleGattAttributes.Read.equals(characteristic.getUuid())) {
-            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(SampleGattAttributes.Notify);
-            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-            mBluetoothGatt.writeDescriptor(descriptor);
-        }
+//        if (SampleGattAttributes.Read.equals(characteristic.getUuid())) {
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(SampleGattAttributes.Notify);
+        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        mBluetoothGatt.writeDescriptor(descriptor);
+        mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+//        }
     }
 
     public class LocalBinder extends Binder {
